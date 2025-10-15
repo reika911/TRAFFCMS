@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}Error{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h1 class="text-danger mb-4 text-center">
+            <i class="bi bi-exclamation-triangle-fill"></i> Error
+          </h1>
+          <p class="lead text-center">{{ error }}</p>
+
+          {% if debug_info %}
+          <hr>
+          <h5>Debug Output</h5>
+          <pre class="bg-light p-3 border rounded" style="max-height:400px; overflow:auto; font-size:0.9rem;">{{ debug_info }}</pre>
+          {% endif %}
+
+          <div class="text-center">
+            <a href="{{ url_for('verification_gate') }}" class="btn btn-primary mt-3">
+              <i class="bi bi-arrow-left"></i> Back to verification
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

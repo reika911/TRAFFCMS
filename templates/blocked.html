@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container d-flex justify-content-center align-items-center vh-100">
+    <div class="text-center p-4 bg-white rounded shadow-sm" style="max-width: 500px;">
+        <h2 class="text-danger mb-4"><i class="bi bi-shield-lock-fill"></i> Access Restricted</h2>
+        <p class="lead">The domain <strong>{{ domain }}</strong> is not authorized to use this verification service.</p>
+        <p>Please contact the website administrator if you believe this is an error.</p>
+        <div class="mt-4">
+            <a href="/admin" class="btn btn-outline-primary">Admin Login</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

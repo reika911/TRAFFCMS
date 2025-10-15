@@ -1,0 +1,766 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Panel{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <!-- Top Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center" href="#">
+                <i class="bi bi-shield-lock me-2"></i>
+                <span>Verification Gateway</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link d-flex align-items-center" href="{{ url_for('admin_logout') }}">
+                            <i class="bi bi-box-arrow-right me-1"></i>
+                            <span>Logout</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sidebar and Main Content -->
+    <div class="container-fluid px-0">
+        <div class="row g-0">
+            <!-- Sidebar -->
+            <div class="col-lg-2 bg-light border-end" style="min-height: calc(100vh - 76px);">
+                <div class="p-3">
+                    <h6 class="text-uppercase text-muted small fw-bold mb-3">Navigation</h6>
+                    <ul class="nav nav-pills flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#dashboard" data-bs-toggle="tab">
+                                <i class="bi bi-speedometer2 me-2"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#settings" data-bs-toggle="tab">
+                                <i class="bi bi-gear me-2"></i> Settings
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#visits" data-bs-toggle="tab">
+                                <i class="bi bi-eye me-2"></i> Visits
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#downloads" data-bs-toggle="tab">
+                                <i class="bi bi-download me-2"></i> Downloads
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#blocklist" data-bs-toggle="tab">
+                                <i class="bi bi-shield-slash me-2"></i> Blocklist
+                            </a>
+                        </li>
+                    </ul>
+
+                    <hr class="my-3">
+
+                    <h6 class="text-uppercase text-muted small fw-bold mb-3">Quick Actions</h6>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('api_export_csv') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-download me-1"></i> Export CSV
+                        </a>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="refreshStats()">
+                            <i class="bi bi-arrow-clockwise me-1"></i> Refresh Stats
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-lg-10 px-4 py-4">
+                <div class="tab-content">
+                    <!-- Dashboard Tab -->
+                    <div class="tab-pane fade show active" id="dashboard">
+                        <!-- Stats Overview -->
+                        <div class="row mb-4 g-3">
+                            <div class="col-md-3">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="text-muted mb-2">Total Visits</h6>
+                                                <h2 class="mb-0">{{ stats.total_visits }}</h2>
+                                            </div>
+                                            <div class="bg-primary bg-opacity-10 p-3 rounded">
+                                                <i class="bi bi-people-fill text-primary fs-4"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="text-muted mb-2">Verified Visits</h6>
+                                                <h2 class="mb-0">{{ stats.verified_visits }}</h2>
+                                            </div>
+                                            <div class="bg-success bg-opacity-10 p-3 rounded">
+                                                <i class="bi bi-check-circle-fill text-success fs-4"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="text-muted mb-2">Success Rate</h6>
+                                                <h2 class="mb-0">{{ (stats.verified_visits / stats.total_visits * 100)|round(1) if stats.total_visits > 0 else 0 }}%</h2>
+                                            </div>
+                                            <div class="bg-info bg-opacity-10 p-3 rounded">
+                                                <i class="bi bi-graph-up text-info fs-4"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="text-muted mb-2">Total Downloads</h6>
+                                                <h2 class="mb-0">{{ stats.total_downloads }}</h2>
+                                            </div>
+                                            <div class="bg-warning bg-opacity-10 p-3 rounded">
+                                                <i class="bi bi-download text-warning fs-4"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- JavaScript Verification Stats -->
+                        <div class="row mb-4 g-3">
+                            <div class="col-md-4">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="text-muted mb-2">JS Verifications</h6>
+                                                <h2 class="mb-0">{{ stats.js_verifications or 0 }}</h2>
+                                                <small class="text-muted">Total JavaScript verifications</small>
+                                            </div>
+                                            <div class="bg-info bg-opacity-10 p-3 rounded">
+                                                <i class="bi bi-code-slash text-info fs-4"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="text-muted mb-2">JS Enabled</h6>
+                                                <h2 class="mb-0">{{ stats.js_enabled or 0 }}</h2>
+                                                <small class="text-muted">Clients with JavaScript</small>
+                                            </div>
+                                            <div class="bg-success bg-opacity-10 p-3 rounded">
+                                                <i class="bi bi-check-circle text-success fs-4"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="text-muted mb-2">Cookies Enabled</h6>
+                                                <h2 class="mb-0">{{ stats.cookies_enabled or 0 }}</h2>
+                                                <small class="text-muted">Clients with cookies</small>
+                                            </div>
+                                            <div class="bg-warning bg-opacity-10 p-3 rounded">
+                                                <i class="bi bi-cookie text-warning fs-4"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Charts and Recent Activity -->
+                        <div class="row g-4">
+                            <div class="col-lg-6">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-header bg-white border-0 py-3">
+                                        <h5 class="mb-0">Visits Last 24 Hours</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <canvas id="visitsChart" height="250"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-header bg-white border-0 py-3">
+                                        <h5 class="mb-0">Top Countries</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-sm">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Country</th>
+                                                        <th>Visits</th>
+                                                        <th>Verified</th>
+                                                        <th>Rate</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for country, code, visits, verified in stats.countries[:5] %}
+                                                    <tr>
+                                                        <td>
+                                                            {% if code %}
+                                                            <span class="fi fi-{{ code.lower() }} me-1"></span>
+                                                            {% endif %}
+                                                            {{ country }}
+                                                        </td>
+                                                        <td>{{ visits }}</td>
+                                                        <td>{{ verified }}</td>
+                                                        <td>
+                                                            <span class="badge bg-{{ 'success' if (verified/visits*100)|round(0)|int > 50 else 'warning' }}">
+                                                                {{ (verified / visits * 100)|round(1) if visits > 0 else 0 }}%
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- JavaScript Verification Details -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="card border-0 shadow-sm">
+                                    <div class="card-header bg-white border-0 py-3">
+                                        <h5 class="mb-0">JavaScript Verification Details</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-sm">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Browser Feature</th>
+                                                        <th>Value</th>
+                                                        <th>Count</th>
+                                                        <th>Percentage</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td>Screen Resolution</td>
+                                                        <td>Various</td>
+                                                        <td>{{ stats.js_verifications or 0 }}</td>
+                                                        <td>100%</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Timezone</td>
+                                                        <td>Detected</td>
+                                                        <td>{{ stats.timezone_detected or 0 }}</td>
+                                                        <td>{{ ((stats.timezone_detected or 0) / (stats.js_verifications or 1) * 100)|round(1) }}%</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>WebGL Support</td>
+                                                        <td>Available</td>
+                                                        <td>{{ stats.webgl_available or 0 }}</td>
+                                                        <td>{{ ((stats.webgl_available or 0) / (stats.js_verifications or 1) * 100)|round(1) }}%</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Hardware Concurrency</td>
+                                                        <td>{{ stats.avg_concurrency or 'N/A' }} cores</td>
+                                                        <td>{{ stats.hardware_detected or 0 }}</td>
+                                                        <td>{{ ((stats.hardware_detected or 0) / (stats.js_verifications or 1) * 100)|round(1) }}%</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Settings Tab -->
+                    <div class="tab-pane fade" id="settings">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-white border-0 py-3">
+                                <h5 class="mb-0">System Settings</h5>
+                            </div>
+                            <div class="card-body">
+                                <form method="POST" action="{{ url_for('admin_panel') }}">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Allowed Domains</label>
+                                                <textarea class="form-control" name="allowed_domains" rows="3" required>{{ settings.allowed_domains }}</textarea>
+                                                <small class="text-muted">Comma-separated, use * for wildcard</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Clipboard Text</label>
+                                                <textarea class="form-control" name="clipboard_text" rows="3" required>{{ settings.clipboard_text }}</textarea>
+                                                <small class="text-muted">Use {random} for verification code</small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label class="form-label">Modal Title</label>
+                                                <input type="text" class="form-control" name="modal_title" value="{{ settings.modal_title }}" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label class="form-label">Modal Text</label>
+                                                <input type="text" class="form-control" name="modal_body" value="{{ settings.modal_body }}" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label class="form-label">Button Text</label>
+                                                <input type="text" class="form-control" name="verify_button_text" value="{{ settings.verify_button_text }}" required>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <div class="mb-3">
+                                                <label class="form-label">Preloader (ms)</label>
+                                                <input type="number" class="form-control" name="preloader_ms" value="{{ settings.preloader_ms }}" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="mb-3">
+                                                <label class="form-label">Expire (min)</label>
+                                                <input type="number" class="form-control" name="verification_expire_minutes" value="{{ settings.verification_expire_minutes }}" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Admin Password</label>
+                                                <input type="password" class="form-control" name="admin_password" placeholder="Leave blank to keep current">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-save me-1"></i> Save Settings
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Visits Tab -->
+                    <div class="tab-pane fade" id="visits">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Visit History</h5>
+                                <div class="d-flex gap-2">
+                                    <input type="text" class="form-control form-control-sm" placeholder="Search..." id="visitSearch">
+                                    <select class="form-select form-select-sm" style="width: 120px;" id="visitFilter">
+                                        <option value="all">All Status</option>
+                                        <option value="verified">Verified</option>
+                                        <option value="pending">Pending</option>
+                                    </select>
+                                    <button class="btn btn-sm btn-outline-danger ms-2" onclick="blockSelectedIPs()">
+                                        <i class="bi bi-shield-slash"></i> Block Selected
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0" id="visitsTable">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th><input type="checkbox" id="selectAllVisits" onclick="toggleSelectAll('visit')"></th>
+                                                <th>Time</th>
+                                                <th>Domain</th>
+                                                <th>IP</th>
+                                                <th>Country</th>
+                                                <th>OS</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for visit in stats.recent_visits %}
+                                            <tr>
+                                                <td><input type="checkbox" class="visit-checkbox" value="{{ visit.ip }}"></td>
+                                                <td>{{ visit.ts.strftime('%Y-%m-%d %H:%M') }}</td>
+                                                <td>{{ visit.domain|truncate(20) }}</td>
+                                                <td><code>{{ visit.ip }}</code></td>
+                                                <td>
+                                                    {% if visit.country_code %}
+                                                    <span class="fi fi-{{ visit.country_code.lower() }} me-1"></span>
+                                                    {% endif %}
+                                                    {{ visit.country }}
+                                                </td>
+                                                <td>{{ visit.os }}</td>
+                                                <td>
+                                                    {% if visit.verified %}
+                                                    <span class="badge bg-success">Verified</span>
+                                                    {% else %}
+                                                    <span class="badge bg-secondary">Pending</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-danger" onclick="blockIP('{{ visit.ip }}')">
+                                                        <i class="bi bi-shield-slash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="card-footer bg-white border-0">
+                                <nav aria-label="Page navigation">
+                                    <ul class="pagination pagination-sm justify-content-center mb-0">
+                                        <li class="page-item disabled">
+                                            <a class="page-link" href="#">Previous</a>
+                                        </li>
+                                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="#">Next</a>
+                                        </li>
+                                    </ul>
+                                    <div class="text-center mt-2">
+                                        <small class="text-muted">
+                                            Showing {{ stats.pagination.page }} of {{ stats.pagination.pages }} pages
+                                            ({{ stats.pagination.total }} total visits)
+                                        </small>
+                                    </div>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Downloads Tab -->
+                    <div class="tab-pane fade" id="downloads">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-white border-0 py-3">
+                                <h5 class="mb-0">Download Statistics</h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>File</th>
+                                                <th>Downloads</th>
+                                                <th>Last Download</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for file, count, last in stats.file_downloads %}
+                                            <tr>
+                                                <td>{{ file }}</td>
+                                                <td>{{ count }}</td>
+                                                <td>{{ last.strftime('%Y-%m-%d %H:%M') if last else 'Never' }}</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-primary">
+                                                        <i class="bi bi-download"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Blocklist Tab -->
+                    <div class="tab-pane fade" id="blocklist">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Blocked IP Addresses</h5>
+                                <div>
+                                    <button class="btn btn-sm btn-danger me-2" onclick="unblockSelectedIPs()">
+                                        <i class="bi bi-x-circle"></i> Unblock Selected
+                                    </button>
+                                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addBlockModal">
+                                        <i class="bi bi-plus me-1"></i> Add IP
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th><input type="checkbox" id="selectAllBlocked" onclick="toggleSelectAll('blocked')"></th>
+                                                <th>IP Address</th>
+                                                <th>Reason</th>
+                                                <th>Blocked At</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for blocked in stats.blocked_ips %}
+                                            <tr>
+                                                <td><input type="checkbox" class="blocked-checkbox" value="{{ blocked.ip }}"></td>
+                                                <td><code>{{ blocked.ip }}</code></td>
+                                                <td>{{ blocked.reason }}</td>
+                                                <td>{{ blocked.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-danger" onclick="unblockIP('{{ blocked.ip }}')">
+                                                        <i class="bi bi-x-circle"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Block Modal -->
+<div class="modal fade" id="addBlockModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Block IP Address</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="blockIPForm">
+                    <div class="mb-3">
+                        <label class="form-label">IP Address</label>
+                        <input type="text" class="form-control" name="ip" required placeholder="192.168.1.1">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Reason</label>
+                        <input type="text" class="form-control" name="reason" placeholder="Spam traffic">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="addBlockIP()">Block IP</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+<!-- Country flags CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@6.6.6/css/flag-icons.min.css">
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+    body {
+        background-color: #f8f9fa;
+        font-size: 0.9rem;
+    }
+    .nav-pills .nav-link {
+        border-radius: 0.25rem;
+        margin-bottom: 0.25rem;
+        color: #495057;
+    }
+    .nav-pills .nav-link.active {
+        background-color: #0d6efd;
+    }
+    .card {
+        border-radius: 0.5rem;
+    }
+    .table {
+        font-size: 0.85rem;
+        margin-bottom: 0;
+    }
+    .table th {
+        font-weight: 500;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+        color: #6c757d;
+    }
+    .fi {
+        box-shadow: 0 0 0.5px rgba(0,0,0,0.5);
+    }
+</style>
+
+<script>
+function refreshStats() {
+    fetch('/api/stats')
+        .then(response => response.json())
+        .then(data => {
+            if (data.ok) {
+                location.reload();
+            }
+        });
+}
+
+function blockIP(ip) {
+    if (confirm(`Block IP address ${ip}?`)) {
+        fetch('/api/block_ip', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ip: ip, reason: 'Manual block'})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.ok) {
+                alert('IP blocked successfully');
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        });
+    }
+}
+
+function addBlockIP() {
+    const form = document.getElementById('blockIPForm');
+    const formData = new FormData(form);
+    
+    fetch('/api/block_ip', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            ip: formData.get('ip'),
+            reason: formData.get('reason') || 'Manual block'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.ok) {
+            $('#addBlockModal').modal('hide');
+            alert('IP blocked successfully');
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    });
+}
+
+function unblockIP(ip) {
+    if (confirm(`Unblock IP address ${ip}?`)) {
+        fetch('/api/unblock_ip', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ip: ip})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.ok) {
+                alert('IP unblocked successfully');
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        });
+    }
+}
+
+// Initialize chart
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('visitsChart').getContext('2d');
+    const visitsData = {{ stats.visits_24h | tojson }};
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: visitsData.map(d => d.ts),
+            datasets: [{
+                label: 'Total Visits',
+                data: visitsData.map(d => d.total),
+                borderColor: '#0d6efd',
+                tension: 0.3,
+                fill: false
+            }, {
+                label: 'Verified Visits',
+                data: visitsData.map(d => d.verified),
+                borderColor: '#198754',
+                tension: 0.3,
+                fill: false
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            }
+        }
+    });
+});
+
+function toggleSelectAll(type) {
+    const checkboxes = document.querySelectorAll('.' + type + '-checkbox');
+    const selectAll = document.getElementById('selectAll' + (type === 'visit' ? 'Visits' : 'Blocked'));
+    checkboxes.forEach(cb => cb.checked = selectAll.checked);
+}
+
+function blockSelectedIPs() {
+    const ips = Array.from(document.querySelectorAll('.visit-checkbox:checked')).map(cb => cb.value);
+    if (ips.length === 0) { alert('No IPs selected.'); return; }
+    if (confirm(`Block selected IPs?`)) {
+        ips.forEach(ip => blockIP(ip));
+    }
+}
+
+function unblockSelectedIPs() {
+    const ips = Array.from(document.querySelectorAll('.blocked-checkbox:checked')).map(cb => cb.value);
+    if (ips.length === 0) { alert('No IPs selected.'); return; }
+    if (confirm(`Unblock selected IPs?`)) {
+        ips.forEach(ip => unblockIP(ip));
+    }
+}
+</script>
+{% endblock %}
