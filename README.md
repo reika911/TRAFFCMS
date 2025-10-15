@@ -1,3 +1,6 @@
+Trigger:
+https://www.netskope.com/blog/lumma-stealer-fake-captchas-new-techniques-to-evade-detection
+
 # SmartPayCMS
 Fake-CF capcha CTRL+V 
 
