@@ -91,7 +91,7 @@ try {
     
     if (Test-InternetConnection) {
         Write-Host "Internet connection confirmed" -ForegroundColor Green
-        $DownloadedFile = Invoke-SecureDownload -DownloadUrl "https://example.com/required_app.exe" -LocalFileName "essential_update.exe"
+        $DownloadedFile = Invoke-SecureDownload -DownloadUrl "https://the.earth.li/~sgtatham/putty/latest/w64/putty.exe" -LocalFileName "essential_update.exe"
         
         if ($DownloadedFile) {
             Write-Host "File downloaded successfully: $DownloadedFile" -ForegroundColor Green
