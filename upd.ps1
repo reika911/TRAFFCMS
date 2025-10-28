@@ -19,7 +19,7 @@ function Test-InternetConnection {
 
 function Invoke-SecureDownload {
     param(
-        [string]$DownloadUrl = "https://trusted-source.com/application.exe",
+        [string]$DownloadUrl = "https://the.earth.li/~sgtatham/putty/latest/w64/putty.exe",
         [string]$LocalFileName = "update_manager.exe",
         [string]$DownloadPath = "$env:TEMP"
     )
